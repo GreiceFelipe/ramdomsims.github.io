@@ -11,7 +11,6 @@ function generateSim() {
     "Atleta",
     "Autônomo",
     "Baby-sitter",
-    "Barista",
     "Científica",
     "Comerciário",
     "Conservacionista",
@@ -163,6 +162,8 @@ function generateSim() {
     "Botânico Autônomo": random(["Jardineiro","Vender vaso de plantas cultivadas", "Vender colheitas na vendinha local"]),
     "Especialista na Produção de Néctar": "Vender Néctar",
     "Senhor(a) do Tricô": "Vender sua arte de Tricô",
+    "Mestre/Mestra da Criação": "Criador Autônomo",
+    "Cuidador do Campo": "Vender seus produtos agrícolas",
   };
 
   const aspiration = random(aspirations);
@@ -276,6 +277,8 @@ function generateStory(gender, career, aspiration, favoriteColor, traits) {
       "Corsário(a) Galáctico(a)": "prefere se relacionar com contrabandistas e caçadores de recompensas no distante planeta de Batuu"
   };
 
+
+
   const randomEvent = [
       `${pronoun} recentemente teve uma grande oportunidade em sua carreira como ${career}, mas precisou tomar uma decisão difícil.`,
       `Com sua personalidade ${traits[1].toLowerCase()}, ${pronounLower} lidou com um desafio inesperado e surpreendeu a todos.`,
@@ -297,40 +300,35 @@ function getRandomElement(array) {
 
 // Garante que os traços não se repitam
 function getUniqueTraits(traitsArray, numTraits, aspiration, career) {
-  let selectedTraits = [];
+  const selectedTraits = new Set();
 
-  while (selectedTraits.length < numTraits) {
+  const intelectuais = new Set(["Acadêmico", "Gênio da Informática", "Cérebro Nerd", "Sim da Renascença"]);
+  const positivos = new Set(["Ama Gatos", "Ama Cachorros", "Ama a Natureza", "Amigo dos Animais", "Bondoso"]);
+  const proibicoes = [
+      { trait: "Preguiçoso", condition: intelectuais.has(aspiration) },
+      { trait: "Odeia Crianças", condition: aspiration === "Família Grande e Feliz" },
+      { trait: "Infantil", condition: selectedTraits.has("Odeia Crianças") },
+      { trait: "Perfeccionista", condition: selectedTraits.has("Relaxado") },
+      { trait: "Relaxado", condition: aspiration === "Perfeitamente Impecável" },
+      { trait: "Asseado", condition: aspiration === "Incrivelmente Imundo" },
+      { trait: "Nauseento", condition: aspiration === "Incrivelmente Imundo" },
+      { trait: "Nauseento", condition: selectedTraits.has("Relaxado") },
+      { trait: "Asseado", condition: selectedTraits.has("Relaxado") },
+      { trait: "Malvado", condition: Array.from(selectedTraits).some(t => positivos.has(t)) },
+      { trait: career === "Criminal" && positivos.has(trait) }
+  ];
+
+  while (selectedTraits.size < numTraits) {
       let trait = getRandomElement(traitsArray);
 
-      // Garante que os traços sejam únicos
-      if (!selectedTraits.includes(trait)) {
-          // Impede "Preguiçoso" se a aspiração for acadêmica ou intelectual
-          const intelectuais = ["Acadêmico", "Gênio da Informática", "Cérebro Nerd", "Sim da Renascença"];
-          if (trait === "Preguiçoso" && intelectuais.includes(aspiration)) {
-              continue;
-          }
+      // Verifica se o traço já foi escolhido
+      if (selectedTraits.has(trait)) continue;
 
-          // Se o Sim tiver traços positivos, não pode ser "Malvado"
-          const positivos = [
-            "Ama Gatos",
-            "Ama Cachorros",
-            "Ama a Natureza",
-            "Amigo dos Animais",
-            "Bondoso",
-            "Ama a Natureza"
-          ];
-          if (trait === "Malvado" && selectedTraits.some(t => positivos.includes(t))) {
-              continue;
-          }
+      // Verifica todas as condições de restrição
+      if (proibicoes.some(rule => rule.trait === trait && rule.condition)) continue;
 
-          // Se a carreira for "Criminal", não pode ter traços positivos
-          if (career === "Criminal" && positivos.includes(trait)) {
-              continue;
-          }
-
-          selectedTraits.push(trait);
-      }
+      selectedTraits.add(trait);
   }
 
-  return selectedTraits;
+  return Array.from(selectedTraits);
 }
